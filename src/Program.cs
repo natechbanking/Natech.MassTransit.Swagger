@@ -64,7 +64,14 @@ namespace Natech.MassTransit.Swagger
             };
             if (useKeyvault && keyvaultUri is not null)
             {
-                builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
+                try
+                {
+                    builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error while trying to add keyvault {e.Message}");
+                }
             }
 
             // Scan the referenced assembly for consumer types
