@@ -23,12 +23,14 @@ namespace Natech.MassTransit.Swagger
             var builder = WebApplication.CreateBuilder(args);
 
             var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
-            if (projectArg == null)
+            var dllPath = args.FirstOrDefault(arg => arg.StartsWith("--dllPath="));
+            if (projectArg == null || dllPath == null)
             {
-                Console.WriteLine("No project argument was passed, please pass a project argument using --project=foobar");
+                Console.WriteLine("Missing --project or --dllPath argument");
                 return;
             }
             var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
+            var dllPathValue = Regex.Match(dllPath, @"--dllPath=(.*)").Groups[1].Value;
 
             Console.WriteLine($"Using project {projectArgValue}");
             
@@ -63,8 +65,8 @@ namespace Natech.MassTransit.Swagger
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
 
-            var consumerAssemblyPath = Path.Combine(OutputPath, projectArgValue.Split('\\').Last() + ".dll");
-            var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
+            var consumerAssemblyPath = Path.Combine(OutputPath, "dllPathValue");
+            var consumerAssembly = Assembly.Load(consumerAssemblyPath);
             var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
                 .ToList();
@@ -83,7 +85,7 @@ namespace Natech.MassTransit.Swagger
 
                 cfg.UsingAzureServiceBus((context, config) =>
                 {
-                    config.Host(builder.Configuration["NatechBus"]);
+                    config.Host((useKeyvault) ? keyVaultBusKey : "Test");
                     config.ConfigureEndpoints(context);
                 });
             });
