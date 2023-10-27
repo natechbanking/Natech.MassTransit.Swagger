@@ -86,11 +86,8 @@ namespace Natech.MassTransit.Swagger
                 var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
                 .ToList();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error while trying to load assembly {e.Message}");
-            }
+           
+
 
             // Create a new controller to list consumer names
             builder.Services.AddSwaggerGen(c =>
@@ -136,8 +133,14 @@ namespace Natech.MassTransit.Swagger
 
                 binder.Build(app, routePrefix);
             }
+                app.Run();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"Error while trying to load assembly {e.Message}");
+            }
 
-            app.Run();
+           
         }
     }
 
