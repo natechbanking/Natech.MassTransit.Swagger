@@ -12,6 +12,7 @@
     <Description>Natech.MassTransit.Swagger</Description>
     <PackageId>Natech.MassTransit.Swagger</PackageId>
     <PackageTags>nuget</PackageTags>
+    <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>mtswagger</ToolCommandName>
