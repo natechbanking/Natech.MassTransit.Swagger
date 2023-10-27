@@ -67,7 +67,7 @@ namespace Natech.MassTransit.Swagger
             {
                 try
                 {
-                    builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
+                    builder.Configuration.AddAzureKeyVault(new Uri(keyvaultUri), new DefaultAzureCredential(identityOptions));
                 }
                 catch (Exception e)
                 {
@@ -76,7 +76,7 @@ namespace Natech.MassTransit.Swagger
             }
 
             // Scan the referenced assembly for consumer types
-            var ProjectReference = projectArgValue;
+            var ProjectReference = "src\\Natech.BNPL.Orchestrator";
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
             try
