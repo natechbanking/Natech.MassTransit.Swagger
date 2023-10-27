@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <OutputType>Library</OutputType>
+    <Version>1.0.0</Version>
+    <Nullable>enable</Nullable>
+    <Authors>Natech S.A.</Authors>
+    <Copyright>Natech S.A.</Copyright>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Description>Natech.MassTransit.Swagger</Description>
+    <PackageId>Natech.MassTransit.Swagger</PackageId>
+    <PackageTags>nuget</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>mtswagger</ToolCommandName>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="8.1.0" />
+
+  </ItemGroup>
+  <ItemGroup Label="Azure Identity">
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.2.2" />
+    <PackageReference Include="Azure.Identity" Version="1.10.0" />
+  </ItemGroup>
+</Project>

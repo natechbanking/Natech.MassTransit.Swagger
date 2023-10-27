@@ -1,0 +1,30 @@
+name: build-$(Build.SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+  - group: 'Credentials'
+  - name: BUILD_CONFIGURATION
+    value: 'Release'
+
+pool:
+  name: Linux agent pool
+
+#manual trigger
+trigger: none
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: Natech.Templates/Natech.Templates.DevOps
+      ref: main
+
+stages:
+
+  - template: stages/dotnet-build-net6.yml@templates
+    parameters:
+      CsProjFile: Natech.MassTransit.Swagger/src/Natech.MassTransit.Swagger.csproj
+      ProjectDirectory: Natech.MassTransit.Swagger/src
+  - template: stages/dotnet-test-net6.yml@templates
+    parameters:
+      CsProjFile: Natech.MassTransit.Swagger/tests/Natech.MassTransit.Swagger.Tests.csproj
+      ProjectDirectory: Natech.MassTransit.Swagger/tests

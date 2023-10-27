@@ -1,0 +1,24 @@
+name: nuget-$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+variables:
+  - group: 'Credentials'
+  - name: BUILD_CONFIGURATION
+    value: 'Release'
+
+pool:
+  name: Linux agent pool
+
+trigger: none
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: Natech.Templates/Natech.Templates.DevOps
+      ref: main
+
+stages:
+
+  - template: stages/nuget-push.yml@templates
+    parameters:
+      CsProjFile: Natech.MassTransit.Swagger/src/Natech.MassTransit.Swagger.csproj
+      ProjectDirectory: Natech.MassTransit.Swagger/src
