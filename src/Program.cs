@@ -22,19 +22,27 @@ namespace Natech.MassTransit.Swagger
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //check if 3 arguments are passed
-            if (args.Length != 3)
+            //check if a --project="x" argument was passed, if so use that as the project reference otherwise exit with error
+            var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
+            if (projectArg == null)
             {
-                Console.WriteLine("Please provide the following arguments: <useKeyvault> <ProjectReference> <consumerAssemblyPath>");
+                Console.WriteLine("No project argument was passed, please pass a project argument using --project=\"foobar\"");
                 return;
             }
 
-            //print arguments
-            Console.WriteLine("Arguments:");
-            foreach (var arg in args)
-            {
-                Console.WriteLine(arg);
-            }
+            //extract the project name from the project argument
+            var projectArgRegex = new Regex("--project=\"(.*)\"");
+            var projectArgMatch = projectArgRegex.Match(projectArg);
+            var projectArgValue = projectArgMatch.Groups[1].Value;
+
+            Console.WriteLine($"Project argument was passed, using {projectArgValue} as the project reference");
+            
+            //check if a --useKeyvault argument was passed, if so then a --keyvaultUri argument must also be passed , if any of those are missing set useKeyvault to false
+            var useKeyvaultArg = args.FirstOrDefault(arg => arg.StartsWith("--useKeyvault"));
+            var keyvaultUriArg = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultUri="));
+            var useKeyvault = false;
+            useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null);
+            
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
