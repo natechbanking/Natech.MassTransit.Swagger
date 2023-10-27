@@ -22,6 +22,20 @@ namespace Natech.MassTransit.Swagger
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            //check if 3 arguments are passed
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Please provide the following arguments: <useKeyvault> <ProjectReference> <consumerAssemblyPath>");
+                return;
+            }
+
+            //print arguments
+            Console.WriteLine("Arguments:");
+            foreach (var arg in args)
+            {
+                Console.WriteLine(arg);
+            }
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
