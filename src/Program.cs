@@ -32,8 +32,9 @@ namespace Natech.MassTransit.Swagger
             var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
             var dllPathValue = Regex.Match(dllPath, @"--dllPath=(.*)").Groups[1].Value;
 
-            Console.WriteLine($"Using project {projectArgValue}");
-            
+            Console.WriteLine($"Using project: {projectArgValue}");
+            Console.WriteLine($"Using dllPath: {dllPathValue}");
+
             //check if a --useKeyvault argument was passed, if so then a --keyvaultUri argument must also be passed , if any of those are missing set useKeyvault to false
             var useKeyvaultArg = args.FirstOrDefault(arg => arg.StartsWith("--useKeyvault"));
             var keyvaultUriArg = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultUri="));
@@ -43,11 +44,11 @@ namespace Natech.MassTransit.Swagger
             var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;  
             var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
 
-            Console.WriteLine($"Using keyvault {useKeyvault}");
+            Console.WriteLine($"Using keyvault: {useKeyvault}");
             if (useKeyvault)
             {
-                Console.WriteLine($"Using keyvaultUri {keyvaultUri}");
-                Console.WriteLine($"Using keyvaultBusKey {keyVaultBusKey}");
+                Console.WriteLine($"Using keyvaultUri: {keyvaultUri}");
+                Console.WriteLine($"Using keyvaultBusKey: {keyVaultBusKey}");
             }
             
 
@@ -78,12 +79,18 @@ namespace Natech.MassTransit.Swagger
             var ProjectReference = projectArgValue;
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
-
-            var consumerAssemblyPath = Path.Combine(OutputPath, dllPathValue);
-            var consumerAssembly = Assembly.Load(consumerAssemblyPath);
-            var consumerTypes = consumerAssembly.GetTypes()
+            try
+            {
+                var consumerAssemblyPath = Path.Combine(OutputPath, dllPathValue);
+                var consumerAssembly = Assembly.Load(consumerAssemblyPath);
+                var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
                 .ToList();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error while trying to load assembly {e.Message}");
+            }
 
             // Create a new controller to list consumer names
             builder.Services.AddSwaggerGen(c =>
