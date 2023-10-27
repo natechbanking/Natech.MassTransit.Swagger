@@ -12,10 +12,7 @@ trigger:
   branches:
     include:
       - master
-  paths:
-    include:
-      - Natech.MassTransit.Swagger/src/*
-      
+
 resources:
   repositories:
     - repository: templates

@@ -72,7 +72,7 @@ namespace Natech.MassTransit.Swagger
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
 
-            var consumerAssemblyPath = Path.Combine(OutputPath, "dllPathValue");
+            var consumerAssemblyPath = Path.Combine(OutputPath, dllPathValue);
             var consumerAssembly = Assembly.Load(consumerAssemblyPath);
             var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
