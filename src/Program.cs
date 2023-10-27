@@ -22,29 +22,30 @@ namespace Natech.MassTransit.Swagger
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //check if a --project=foobar argument was passed, if so use that as the project reference otherwise exit with error
             var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
             if (projectArg == null)
             {
                 Console.WriteLine("No project argument was passed, please pass a project argument using --project=foobar");
                 return;
             }
-
-            //extract the project name from the project argument
             var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
 
-            Console.WriteLine($"Project argument was passed, using {projectArgValue} as the project reference");
+            Console.WriteLine($"Using project {projectArgValue}");
             
             //check if a --useKeyvault argument was passed, if so then a --keyvaultUri argument must also be passed , if any of those are missing set useKeyvault to false
             var useKeyvaultArg = args.FirstOrDefault(arg => arg.StartsWith("--useKeyvault"));
             var keyvaultUriArg = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultUri="));
+            var keyvaultBusKey = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultBusKey="));
             var useKeyvault = false;
-            useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null);
+            useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null && keyvaultBusKey != null);
+            var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;  
+            var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
             
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
             var identityOptions = new DefaultAzureCredentialOptions
             {
                 ExcludeVisualStudioCodeCredential = true,
@@ -52,15 +53,17 @@ namespace Natech.MassTransit.Swagger
                 ExcludeVisualStudioCredential = true,
                 ExcludeInteractiveBrowserCredential = true
             };
-
-            builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
+            if (useKeyvault && keyvaultUri is not null)
+            {
+                builder.Configuration.AddAzureKeyVault(new Uri(keyvaultUri), new DefaultAzureCredential(identityOptions));
+            }
 
             // Scan the referenced assembly for consumer types
-            var ProjectReference = "src\\Natech.BNPL.Orchestrator";
+            var ProjectReference = projectArgValue;
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
 
-            var consumerAssemblyPath = Path.Combine(OutputPath, "Natech.BNPL.Orchestrator.Service.dll");
+            var consumerAssemblyPath = Path.Combine(OutputPath, projectArgValue.Split('\\').Last() + ".dll");
             var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
             var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))

@@ -8,7 +8,14 @@ variables:
 pool:
   name: Linux agent pool
 
-trigger: none
+trigger: 
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - Natech.MassTransit.Swagger/src/*
+      
 resources:
   repositories:
     - repository: templates
