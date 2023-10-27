@@ -42,6 +42,13 @@ namespace Natech.MassTransit.Swagger
             useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null && keyvaultBusKey != null);
             var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;  
             var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
+
+            Console.WriteLine($"Using keyvault {useKeyvault}");
+            if (useKeyvault)
+            {
+                Console.WriteLine($"Using keyvaultUri {keyvaultUri}");
+                Console.WriteLine($"Using keyvaultBusKey {keyVaultBusKey}");
+            }
             
 
             builder.Services.AddControllers();
