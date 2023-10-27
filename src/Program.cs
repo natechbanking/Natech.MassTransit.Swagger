@@ -76,13 +76,13 @@ namespace Natech.MassTransit.Swagger
             }
 
             // Scan the referenced assembly for consumer types
-            var ProjectReference = "src\\Natech.BNPL.Orchestrator";
+            var ProjectReference = projectArgValue;
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
             try
             {
-                var consumerAssemblyPath = Path.Combine(OutputPath, "Natech.BNPL.Orchestrator.Service.dll");
-                var consumerAssembly = Assembly.Load(consumerAssemblyPath);
+                var consumerAssemblyPath = Path.Combine(OutputPath, dllPath);
+                var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
                 var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
                 .ToList();
