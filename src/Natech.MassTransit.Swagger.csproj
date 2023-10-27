@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <OutputType>Library</OutputType>
-    <Version>1.0.2</Version>
+    <OutputType>Exe</OutputType>
+    <Version>1.0.3</Version>
     <Nullable>enable</Nullable>
     <Authors>Natech S.A.</Authors>
     <Copyright>Natech S.A.</Copyright>
