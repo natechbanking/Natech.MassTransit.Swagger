@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/src/obj
+/.vs/Natech.MassTransit.Swagger
+/tests/bin/Debug/net6.0
+/tests/obj
