@@ -5,110 +5,114 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.OpenApi.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using System.Text.RegularExpressions;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-var identityOptions = new DefaultAzureCredentialOptions
+namespace Natech.MassTransit.Swagger // Replace with your desired namespace
 {
-    ExcludeVisualStudioCodeCredential = true,
-    ExcludeSharedTokenCacheCredential = true,
-    ExcludeVisualStudioCredential = true,
-    ExcludeInteractiveBrowserCredential = true
-};
-
-builder.Configuration.AddAzureKeyVault(new Uri(builder.Configuration["KeyVault"]), new DefaultAzureCredential(identityOptions));
-
-
-// Scan the referenced assembly for consumer types
-var ProjectReference = builder.Configuration["ProjectReference"];
-var ProjectPath = Path.GetFullPath(ProjectReference);
-var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
-
-var consumerAssemblyPath = Path.Combine(OutputPath, builder.Configuration["ProjectDll"]);
-var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
-var consumerTypes = consumerAssembly.GetTypes()
-    .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
-    .ToList();
-
-
-
-
-// Create a new controller to list consumer names
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer API", Version = "v1" });
-});
-
-builder.Services.AddSingleton<IEnumerable<Type>>(consumerTypes);
-builder.Services.AddMassTransit(cfg =>
-{
-
-    // Configure MassTransit options
-    cfg.SetKebabCaseEndpointNameFormatter();
-
-    cfg.UsingAzureServiceBus((context, config) =>
+    public class Program
     {
-        config.Host(builder.Configuration["NatechBus"]);
-        config.ConfigureEndpoints(context);
-    });
-});
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+            var identityOptions = new DefaultAzureCredentialOptions
+            {
+                ExcludeVisualStudioCodeCredential = true,
+                ExcludeSharedTokenCacheCredential = true,
+                ExcludeVisualStudioCredential = true,
+                ExcludeInteractiveBrowserCredential = true
+            };
 
-app.UseDeveloperExceptionPage();
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer API v1");
-    c.RoutePrefix = string.Empty;
-});
+            builder.Configuration.AddAzureKeyVault(new Uri(builder.Configuration["KeyVault"]), new DefaultAzureCredential(identityOptions));
 
-app.UseRouting();
+            // Scan the referenced assembly for consumer types
+            var ProjectReference = builder.Configuration["ProjectReference"];
+            var ProjectPath = Path.GetFullPath(ProjectReference);
+            var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
 
-// Dynamically generate routes and configure controller actions for each consumer
-var routePrefix = "/consumers";
-for (var i = 0; i < consumerTypes.Count; i++)
-{
-    var consumerType = consumerTypes[i];
-    var messageType = consumerType.ClosesType(typeof(IConsumer<>), out Type[] types)
-        ? types[0]
-        : throw new InvalidOperationException();
+            var consumerAssemblyPath = Path.Combine(OutputPath, builder.Configuration["ProjectDll"]);
+            var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
+            var consumerTypes = consumerAssembly.GetTypes()
+                .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
+                .ToList();
 
-    var binder = (IBinder)Activator.CreateInstance(typeof(Binder<,>).MakeGenericType(consumerType, messageType))!;
+            // Create a new controller to list consumer names
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer API", Version = "v1" });
+            });
 
-    binder.Build(app, routePrefix);
-}
+            builder.Services.AddSingleton<IEnumerable<Type>>(consumerTypes);
+            builder.Services.AddMassTransit(cfg =>
+            {
+                // Configure MassTransit options
+                cfg.SetKebabCaseEndpointNameFormatter();
 
-app.Run();
+                cfg.UsingAzureServiceBus((context, config) =>
+                {
+                    config.Host(builder.Configuration["NatechBus"]);
+                    config.ConfigureEndpoints(context);
+                });
+            });
 
-interface IBinder
-{
-    void Build(IEndpointRouteBuilder app, string route);
-}
+            var app = builder.Build();
 
-class Binder<TConsumer, TMessage> :
-    IBinder
-    where TConsumer : class, IConsumer
-{
-    public void Build(IEndpointRouteBuilder app, string routePrefix)
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer API v1");
+                c.RoutePrefix = string.Empty;
+            });
+
+            app.UseRouting();
+
+            // Dynamically generate routes and configure controller actions for each consumer
+            var routePrefix = "/consumers";
+            for (var i = 0; i < consumerTypes.Count; i++)
+            {
+                var consumerType = consumerTypes[i];
+                var messageType = consumerType.ClosesType(typeof(IConsumer<>), out Type[] types)
+                    ? types[0]
+                    : throw new InvalidOperationException();
+
+                var binder = (IBinder)Activator.CreateInstance(typeof(Binder<,>).MakeGenericType(consumerType, messageType))!;
+
+                binder.Build(app, routePrefix);
+            }
+
+            app.Run();
+        }
+    }
+
+    interface IBinder
     {
-        var consumerName = KebabCaseEndpointNameFormatter.Instance.Consumer<TConsumer>();
+        void Build(IEndpointRouteBuilder app, string route);
+    }
 
-        var route = $"{routePrefix}/{consumerName}";
+    class Binder<TConsumer, TMessage> :
+        IBinder
+        where TConsumer : class, IConsumer
+    {
+        public void Build(IEndpointRouteBuilder app, string routePrefix)
+        {
+            var consumerName = KebabCaseEndpointNameFormatter.Instance.Consumer<TConsumer>();
 
+            var route = $"{routePrefix}/{consumerName}";
 
-        // Create a POST endpoint for each consumer
-        app.MapPost(route,
-            (IPublishEndpoint publishEndpoint, [FromBody] TMessage message) => publishEndpoint.Publish(message));
+            // Create a POST endpoint for each consumer
+            app.MapPost(route,
+                (IPublishEndpoint publishEndpoint, [FromBody] TMessage message) => publishEndpoint.Publish(message));
+        }
     }
 }
