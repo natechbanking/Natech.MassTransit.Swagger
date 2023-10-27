@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 
-namespace Natech.MassTransit.Swagger 
+namespace Natech.MassTransit.Swagger
 {
     public class Program
     {
@@ -41,7 +41,7 @@ namespace Natech.MassTransit.Swagger
             var keyvaultBusKey = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultBusKey="));
             var useKeyvault = false;
             useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null && keyvaultBusKey != null);
-            var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;  
+            var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;
             var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
 
             Console.WriteLine($"Using keyvault: {useKeyvault}");
@@ -50,7 +50,7 @@ namespace Natech.MassTransit.Swagger
                 Console.WriteLine($"Using keyvaultUri: {keyvaultUri}");
                 Console.WriteLine($"Using keyvaultBusKey: {keyVaultBusKey}");
             }
-            
+
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -67,7 +67,7 @@ namespace Natech.MassTransit.Swagger
             {
                 try
                 {
-                    builder.Configuration.AddAzureKeyVault(new Uri(keyvaultUri), new DefaultAzureCredential(identityOptions));
+                    builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
                 }
                 catch (Exception e)
                 {
@@ -86,61 +86,61 @@ namespace Natech.MassTransit.Swagger
                 var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
                 .ToList();
-           
 
 
-            // Create a new controller to list consumer names
-            builder.Services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer API", Version = "v1" });
-            });
 
-            builder.Services.AddSingleton<IEnumerable<Type>>(consumerTypes);
-            builder.Services.AddMassTransit(cfg =>
-            {
-                // Configure MassTransit options
-                cfg.SetKebabCaseEndpointNameFormatter();
-
-                cfg.UsingAzureServiceBus((context, config) =>
+                // Create a new controller to list consumer names
+                builder.Services.AddSwaggerGen(c =>
                 {
-                    config.Host((useKeyvault) ? keyVaultBusKey : "Test");
-                    config.ConfigureEndpoints(context);
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer API", Version = "v1" });
                 });
-            });
 
-            var app = builder.Build();
+                builder.Services.AddSingleton<IEnumerable<Type>>(consumerTypes);
+                builder.Services.AddMassTransit(cfg =>
+                {
+                    // Configure MassTransit options
+                    cfg.SetKebabCaseEndpointNameFormatter();
 
-            app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer API v1");
-                c.RoutePrefix = string.Empty;
-            });
+                    cfg.UsingAzureServiceBus((context, config) =>
+                    {
+                        config.Host((useKeyvault) ? builder.Configuration[keyVaultBusKey] : "Test");
+                        config.ConfigureEndpoints(context);
+                    });
+                });
 
-            app.UseRouting();
+                var app = builder.Build();
 
-            // Dynamically generate routes and configure controller actions for each consumer
-            var routePrefix = "/consumers";
-            for (var i = 0; i < consumerTypes.Count; i++)
-            {
-                var consumerType = consumerTypes[i];
-                var messageType = consumerType.ClosesType(typeof(IConsumer<>), out Type[] types)
+                app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer API v1");
+                    c.RoutePrefix = string.Empty;
+                });
+
+                app.UseRouting();
+
+                // Dynamically generate routes and configure controller actions for each consumer
+                var routePrefix = "/consumers";
+                for (var i = 0; i < consumerTypes.Count; i++)
+                {
+                    var consumerType = consumerTypes[i];
+                    var messageType = consumerType.ClosesType(typeof(IConsumer<>), out Type[] types)
                     ? types[0]
                     : throw new InvalidOperationException();
 
-                var binder = (IBinder)Activator.CreateInstance(typeof(Binder<,>).MakeGenericType(consumerType, messageType))!;
+                    var binder = (IBinder)Activator.CreateInstance(typeof(Binder<,>).MakeGenericType(consumerType, messageType))!;
 
-                binder.Build(app, routePrefix);
-            }
+                    binder.Build(app, routePrefix);
+                }
                 app.Run();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine($"Error while trying to load assembly {e.Message}");
             }
 
-           
+
         }
     }
 
