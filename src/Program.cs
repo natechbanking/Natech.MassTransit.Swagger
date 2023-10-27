@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 
-namespace Natech.MassTransit.Swagger // Replace with your desired namespace
+namespace Natech.MassTransit.Swagger 
 {
     public class Program
     {
@@ -33,14 +33,14 @@ namespace Natech.MassTransit.Swagger // Replace with your desired namespace
                 ExcludeInteractiveBrowserCredential = true
             };
 
-            builder.Configuration.AddAzureKeyVault(new Uri(builder.Configuration["KeyVault"]), new DefaultAzureCredential(identityOptions));
+            builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
 
             // Scan the referenced assembly for consumer types
-            var ProjectReference = builder.Configuration["ProjectReference"];
+            var ProjectReference = "src\\Natech.BNPL.Orchestrator";
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
 
-            var consumerAssemblyPath = Path.Combine(OutputPath, builder.Configuration["ProjectDll"]);
+            var consumerAssemblyPath = Path.Combine(OutputPath, "Natech.BNPL.Orchestrator.Service.dll");
             var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
             var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
