@@ -20,20 +20,12 @@ namespace Natech.MassTransit.Swagger
     {
         public static void Main(string[] args)
         {
+            var argumentManager = new ArgumentManager(args);
             var builder = WebApplication.CreateBuilder(args);
 
-            var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
-            var dllPath = args.FirstOrDefault(arg => arg.StartsWith("--dllPath="));
-            if (projectArg == null || dllPath == null)
-            {
-                Console.WriteLine("Missing --project or --dllPath argument");
-                return;
-            }
-            var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
-            var dllPathValue = Regex.Match(dllPath, @"--dllPath=(.*)").Groups[1].Value;
 
-            Console.WriteLine($"Using project: {projectArgValue}");
-            Console.WriteLine($"Using dllPath: {dllPathValue}");
+            var requiredArgs = argumentManager.GetProjectAndDllPath();
+
 
             //check if a --useKeyvault argument was passed, if so then a --keyvaultUri argument must also be passed , if any of those are missing set useKeyvault to false
             var useKeyvaultArg = args.FirstOrDefault(arg => arg.StartsWith("--useKeyvault"));
@@ -76,12 +68,12 @@ namespace Natech.MassTransit.Swagger
             }
 
             // Scan the referenced assembly for consumer types
-            var ProjectReference = projectArgValue;
+            var ProjectReference = requiredArgs.projectArgValue;
             var ProjectPath = Path.GetFullPath(ProjectReference);
             var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
             try
             {
-                var consumerAssemblyPath = Path.Combine(OutputPath, dllPathValue);
+                var consumerAssemblyPath = Path.Combine(OutputPath, requiredArgs.dllPathValue);
                 var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
                 var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))

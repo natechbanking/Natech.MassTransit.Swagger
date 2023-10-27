@@ -1,43 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Natech.MassTransit.Swagger
 {
     public class ArgumentManager
     {
         private readonly string[] args;
-        private readonly Dictionary<string, string> argumentMap;
+        //array with all the required arguments
+        private readonly string[] requiredArgs = new string[] { "--project=", "--dllPath=" };
+
+        //array with all the optional arguments
+        private readonly string[] optionalArgs = new string[] { "--useKeyvault", "--keyvaultUri=", "--keyvaultBusKey=" };
 
         public ArgumentManager(string[] args)
         {
             this.args = args;
-            argumentMap = ParseArguments();
+            ValidateRequiredArgs();
         }
 
-        public string GetArgumentValue(string argumentName)
+        public void ValidateRequiredArgs()
         {
-            if (argumentMap.TryGetValue(argumentName, out var value))
+            //check if all the required arguments are present
+            foreach (var requiredArg in requiredArgs)
             {
-                return value;
-            }
-            return null;
-        }
-
-        private Dictionary<string, string> ParseArguments()
-        {
-            var argDictionary = new Dictionary<string, string>();
-
-            foreach (var arg in args)
-            {
-                var parts = arg.Split('=');
-                if (parts.Length == 2)
+                if (!args.Any(arg => arg.StartsWith(requiredArg)))
                 {
-                    argDictionary[parts[0]] = parts[1];
+                    Console.WriteLine($"Missing {requiredArg} argument");
+                    Environment.Exit(0);
                 }
             }
+        }
 
-            return argDictionary;
+        public (string projectArgValue, string dllPathValue) GetProjectAndDllPath()
+        {
+            var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
+            var dllPath = args.FirstOrDefault(arg => arg.StartsWith("--dllPath="));
+            var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
+            var dllPathValue = Regex.Match(dllPath, @"--dllPath=(.*)").Groups[1].Value;
+
+            Console.WriteLine($"Using project: {projectArgValue}");
+            Console.WriteLine($"Using dllPath: {dllPathValue}");
+
+            return (projectArgValue, dllPathValue);
         }
     }
+
 }
