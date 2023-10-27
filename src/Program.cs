@@ -22,18 +22,16 @@ namespace Natech.MassTransit.Swagger
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            //check if a --project="x" argument was passed, if so use that as the project reference otherwise exit with error
+            //check if a --project=foobar argument was passed, if so use that as the project reference otherwise exit with error
             var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
             if (projectArg == null)
             {
-                Console.WriteLine("No project argument was passed, please pass a project argument using --project=\"foobar\"");
+                Console.WriteLine("No project argument was passed, please pass a project argument using --project=foobar");
                 return;
             }
 
             //extract the project name from the project argument
-            var projectArgRegex = new Regex("--project=\"(.*)\"");
-            var projectArgMatch = projectArgRegex.Match(projectArg);
-            var projectArgValue = projectArgMatch.Groups[1].Value;
+            var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
 
             Console.WriteLine($"Project argument was passed, using {projectArgValue} as the project reference");
             
