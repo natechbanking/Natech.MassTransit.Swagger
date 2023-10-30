@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -11,8 +10,9 @@ namespace Natech.MassTransit.Swagger;
 public class ArgumentManager
 {
     private readonly string[] args;
+
     //array with all the required arguments
-    private readonly string[] requiredArgs = new string[] { "--project=", "--dllPath=" };
+    private readonly string[] requiredArgs = ["--project=", "--dllPath="];
 
     public ArgumentManager(string[] args)
     {
@@ -49,21 +49,14 @@ public class ArgumentManager
 
     public (bool useKeyvault, string keyvaultUri, string keyvaultBusKey) GetKeyvaultArgs()
     {
-        //check if a --useKeyvault argument was passed, if so then a --keyvaultUri argument must also be passed , if any of those are missing set useKeyvault to false
-        var useKeyvaultArg = args.FirstOrDefault(arg => arg.StartsWith("--useKeyvault"));
         var keyvaultUriArg = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultUri="));
         var keyvaultBusKey = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultBusKey="));
         var useKeyvault = false;
-        useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null && keyvaultBusKey != null);
+        useKeyvault = (keyvaultUriArg != null && keyvaultBusKey != null);
         var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;
         var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
 
         Console.WriteLine($"Using keyvault: {useKeyvault}");
-        if (useKeyvault)
-        {
-            Console.WriteLine($"Using keyvaultUri: {keyvaultUri}");
-            Console.WriteLine($"Using keyvaultBusKey: {keyVaultBusKey}");
-        }
 
         if (useKeyvault && (keyvaultUri is null || keyVaultBusKey is null))
         {
@@ -110,7 +103,7 @@ public class ArgumentManager
         return (useRabbit, rabbitAddress, rabbitUsername, rabbitPassword, rabbitUri, rabbitVhost);
     }
 
-    public void PrintUsageGuideliness()
+    public static void PrintUsageGuideliness()
     {
         Console.WriteLine("**************************");
         Console.WriteLine("Usage:");
@@ -120,7 +113,6 @@ public class ArgumentManager
         Console.WriteLine("--dllPath=<dll path>");
         Console.WriteLine("**************************");
         Console.WriteLine("Optional arguments:");
-        Console.WriteLine("--useKeyvault");
         Console.WriteLine("--keyvaultUri=<keyvault uri>");
         Console.WriteLine("--keyvaultBusKey=<keyvault bus key>");
         Console.WriteLine("--rabbitAddress=<rabbit address>");
@@ -129,6 +121,5 @@ public class ArgumentManager
         Console.WriteLine("--rabbitUri=<rabbit uri>");
         Console.WriteLine("--rabbitVhost=<rabbit vhost>");
         Console.WriteLine("**************************");
- 
     }
 }

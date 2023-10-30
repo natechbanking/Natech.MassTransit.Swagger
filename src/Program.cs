@@ -4,14 +4,14 @@ using MassTransit.Internals;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 
 namespace Natech.MassTransit.Swagger
 {
@@ -22,19 +22,13 @@ namespace Natech.MassTransit.Swagger
             var argumentManager = new ArgumentManager(args);
             var builder = WebApplication.CreateBuilder(args);
 
-
             var requiredArgs = argumentManager.GetProjectAndDllPath();
             var keyvaultArgs = argumentManager.GetKeyvaultArgs();
             var rabbitArgs = argumentManager.GetRabbitArgs();
 
-
-
-
-
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
 
             if (keyvaultArgs.useKeyvault && keyvaultArgs.keyvaultUri is not null)
             {
@@ -59,8 +53,6 @@ namespace Natech.MassTransit.Swagger
                 var consumerTypes = consumerAssembly.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
                 .ToList();
-
-
 
                 // Create a new controller to list consumer names
                 builder.Services.AddSwaggerGen(c =>
@@ -125,17 +117,15 @@ namespace Natech.MassTransit.Swagger
             {
                 Console.WriteLine($"Error while trying to load assembly {e.Message}");
             }
-
-
         }
     }
 
-    interface IBinder
+    internal interface IBinder
     {
         void Build(IEndpointRouteBuilder app, string route);
     }
 
-    class Binder<TConsumer, TMessage> :
+    internal class Binder<TConsumer, TMessage> :
         IBinder
         where TConsumer : class, IConsumer
     {
