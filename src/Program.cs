@@ -25,6 +25,7 @@ public class Program
         var dllPath = argumentManager.GetDllPath();
         var keyvaultArgs = argumentManager.GetKeyvaultArgs();
         var rabbitArgs = argumentManager.GetRabbitArgs();
+        var sbConnectionString = argumentManager.GetAzureServiceBusConnectionString();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -64,7 +65,7 @@ public class Program
                 {
                     cfg.UsingAzureServiceBus((context, config) =>
                     {
-                        config.Host((keyvaultArgs.useKeyvault) ? builder.Configuration[keyvaultArgs.keyvaultBusKey] : "Test");
+                        config.Host((keyvaultArgs.useKeyvault) ? builder.Configuration[keyvaultArgs.keyvaultBusKey] : sbConnectionString);
                         config.ConfigureEndpoints(context);
                     });
                 }

@@ -9,6 +9,7 @@ You probably have found yourself writing `MassTransit` consumers and wanting an 
 | Argument | Description | Required |
 | --- | --- | --- |
 | --dllPath | The path to the dll containing your consumers | Yes ✅|
+| --sbConnectionString | The connection string to your azure service bus | No ❌ |
 | --keyvaultUri | The uri of the keyvault containing your secrets | No ❌ |
 | --keyvaultBusKey | The name of the secret containing the bus connection string | No ❌ |
 | --rabbitAddress | The address of the rabbitmq server | No ❌ |
@@ -24,6 +25,9 @@ You probably have found yourself writing `MassTransit` consumers and wanting an 
 
 #### Using with rabbitmq
 `mtswagger --rabbitAddress=localhost --rabbitUri=amqp://localhost --rabbitUsername=guest --rabbitPassword=guest --rabbitVhost=/ --dllPath=C:\git\Service.dll`
+
+#### Using with no keyvault and service bus
+`mtswagger --sbConnectionString=Endpoint=sb://test.servicebus.windows.net --dllPath=C:\git\Service.dll`
 
 ## Update
 `dotnet tool update -g Natech.MassTransit.Swagger`

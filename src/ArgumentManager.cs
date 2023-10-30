@@ -82,6 +82,13 @@ public class ArgumentManager
         return (useKeyvault, keyvaultUri, keyVaultBusKey);
     }
 
+    //get azure service bus connection string
+    public string? GetAzureServiceBusConnectionString()
+    {
+        var keyvaultUri = GetArgumentValue("--sbConnectionString=");
+        return keyvaultUri;
+    }
+
     public (bool useRabbit, string rabbitAddress, string rabbitUsername, string rabbitPassword, string rabbitUri, string rabbitVhost) GetRabbitArgs()
     {
         var useRabbit = GetUseArgument("--rabbitAddress=");
