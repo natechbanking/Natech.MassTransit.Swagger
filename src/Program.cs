@@ -12,7 +12,6 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using System.Text.RegularExpressions;
 
 namespace Natech.MassTransit.Swagger
 {
@@ -25,46 +24,28 @@ namespace Natech.MassTransit.Swagger
 
 
             var requiredArgs = argumentManager.GetProjectAndDllPath();
+            var keyvaultArgs = argumentManager.GetKeyvaultArgs();
+            var rabbitArgs = argumentManager.GetRabbitArgs();
 
 
-            //check if a --useKeyvault argument was passed, if so then a --keyvaultUri argument must also be passed , if any of those are missing set useKeyvault to false
-            var useKeyvaultArg = args.FirstOrDefault(arg => arg.StartsWith("--useKeyvault"));
-            var keyvaultUriArg = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultUri="));
-            var keyvaultBusKey = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultBusKey="));
-            var useKeyvault = false;
-            useKeyvault = (useKeyvaultArg != null && keyvaultUriArg != null && keyvaultBusKey != null);
-            var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;
-            var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
 
-            Console.WriteLine($"Using keyvault: {useKeyvault}");
-            if (useKeyvault)
-            {
-                Console.WriteLine($"Using keyvaultUri: {keyvaultUri}");
-                Console.WriteLine($"Using keyvaultBusKey: {keyVaultBusKey}");
-            }
 
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var identityOptions = new DefaultAzureCredentialOptions
+
+            if (keyvaultArgs.useKeyvault && keyvaultArgs.keyvaultUri is not null)
             {
-                ExcludeVisualStudioCodeCredential = true,
-                ExcludeSharedTokenCacheCredential = true,
-                ExcludeVisualStudioCredential = true,
-                ExcludeInteractiveBrowserCredential = true
-            };
-            if (useKeyvault && keyvaultUri is not null)
-            {
-                try
+                var identityOptions = new DefaultAzureCredentialOptions
                 {
-                    builder.Configuration.AddAzureKeyVault(new Uri("https://kv-snappi-dev-westeu.vault.azure.net/"), new DefaultAzureCredential(identityOptions));
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Error while trying to add keyvault {e.Message}");
-                }
+                    ExcludeVisualStudioCodeCredential = true,
+                    ExcludeSharedTokenCacheCredential = true,
+                    ExcludeVisualStudioCredential = true,
+                    ExcludeInteractiveBrowserCredential = true
+                };
+                builder.Configuration.AddAzureKeyVault(new Uri(keyvaultArgs.keyvaultUri), new DefaultAzureCredential(identityOptions));
             }
 
             // Scan the referenced assembly for consumer types
@@ -92,12 +73,25 @@ namespace Natech.MassTransit.Swagger
                 {
                     // Configure MassTransit options
                     cfg.SetKebabCaseEndpointNameFormatter();
-
-                    cfg.UsingAzureServiceBus((context, config) =>
+                    if (!rabbitArgs.useRabbit)
                     {
-                        config.Host((useKeyvault) ? builder.Configuration[keyVaultBusKey] : "Test");
-                        config.ConfigureEndpoints(context);
-                    });
+                        cfg.UsingAzureServiceBus((context, config) =>
+                        {
+                            config.Host((keyvaultArgs.useKeyvault) ? builder.Configuration[keyvaultArgs.keyvaultBusKey] : "Test");
+                            config.ConfigureEndpoints(context);
+                        });
+                    }
+                    else
+                    {
+                        cfg.UsingRabbitMq((context, config) =>
+                        {
+                            config.Host(rabbitArgs.rabbitUri, rabbitArgs.rabbitVhost, h =>
+                            {
+                                h.Username(rabbitArgs.rabbitUsername);
+                                h.Password(rabbitArgs.rabbitPassword);
+                            });
+                        });
+                    }
                 });
 
                 var app = builder.Build();

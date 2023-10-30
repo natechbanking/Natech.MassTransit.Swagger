@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <OutputType>Exe</OutputType>
-    <Version>1.0.22</Version>
+    <Version>1.0.23</Version>
     <Nullable>enable</Nullable>
     <Authors>Natech S.A.</Authors>
     <Copyright>Natech S.A.</Copyright>
@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="MassTransit" Version="8.1.0" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.0" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
