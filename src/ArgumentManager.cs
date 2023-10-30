@@ -7,12 +7,14 @@ namespace Natech.MassTransit.Swagger;
 /// <summary>
 ///     This class should be cleared up and refactored ideally using a CLI Argument Parser library like CommandLineParser, Spectre.Console or something similar
 /// </summary>
+using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+
 public class ArgumentManager
 {
     private readonly string[] args;
-
-    //array with all the required arguments
-    private readonly string[] requiredArgs = ["--project=", "--dllPath="];
+    private readonly string[] requiredArgs = { "--project=", "--dllPath=" };
 
     public ArgumentManager(string[] args)
     {
@@ -22,24 +24,37 @@ public class ArgumentManager
 
     public void ValidateRequiredArgs()
     {
-        //check if all the required arguments are present
         foreach (var requiredArg in requiredArgs)
         {
             if (!args.Any(arg => arg.StartsWith(requiredArg)))
             {
-                Console.WriteLine($"Missing {requiredArg} argument");
-                PrintUsageGuideliness();
-                Environment.Exit(0);
+                MissingArgument(requiredArg);
             }
         }
     }
 
+    private string? GetArgumentValue(string argName)
+    {
+        var argument = args.FirstOrDefault(arg => arg.StartsWith(argName));
+        return argument != null ? Regex.Match(argument, $@"{argName}(.*)").Groups[1].Value : null;
+    }
+
+    private static void MissingArgument(string argName)
+    {
+        Console.WriteLine($"Missing {argName} argument");
+        PrintUsageGuidelines();
+        Environment.Exit(0);
+    }
+
+    private bool GetUseArgument(string argName)
+    {
+        return args.Any(arg => arg.StartsWith(argName));
+    }
+
     public (string projectArgValue, string dllPathValue) GetProjectAndDllPath()
     {
-        var projectArg = args.FirstOrDefault(arg => arg.StartsWith("--project="));
-        var dllPath = args.FirstOrDefault(arg => arg.StartsWith("--dllPath="));
-        var projectArgValue = Regex.Match(projectArg, @"--project=(.*)").Groups[1].Value;
-        var dllPathValue = Regex.Match(dllPath, @"--dllPath=(.*)").Groups[1].Value;
+        var projectArgValue = GetArgumentValue("--project=");
+        var dllPathValue = GetArgumentValue("--dllPath=");
 
         Console.WriteLine($"Using project: {projectArgValue}");
         Console.WriteLine($"Using dllPath: {dllPathValue}");
@@ -49,12 +64,9 @@ public class ArgumentManager
 
     public (bool useKeyvault, string keyvaultUri, string keyvaultBusKey) GetKeyvaultArgs()
     {
-        var keyvaultUriArg = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultUri="));
-        var keyvaultBusKey = args.FirstOrDefault(arg => arg.StartsWith("--keyvaultBusKey="));
-        var useKeyvault = false;
-        useKeyvault = (keyvaultUriArg != null && keyvaultBusKey != null);
-        var keyvaultUri = (useKeyvault) ? Regex.Match(keyvaultUriArg, @"--keyvaultUri=(.*)").Groups[1].Value : null;
-        var keyVaultBusKey = (useKeyvault) ? Regex.Match(keyvaultBusKey, @"--keyvaultBusKey=(.*)").Groups[1].Value : null;
+        var useKeyvault = GetUseArgument("--keyvaultUri=") && GetUseArgument("--keyvaultBusKey=");
+        var keyvaultUri = useKeyvault ? GetArgumentValue("--keyvaultUri=") : null;
+        var keyVaultBusKey = useKeyvault ? GetArgumentValue("--keyvaultBusKey=") : null;
 
         Console.WriteLine($"Using keyvault: {useKeyvault}");
 
@@ -74,17 +86,12 @@ public class ArgumentManager
 
     public (bool useRabbit, string rabbitAddress, string rabbitUsername, string rabbitPassword, string rabbitUri, string rabbitVhost) GetRabbitArgs()
     {
-        var rabbitAddressArg = args.FirstOrDefault(arg => arg.StartsWith("--rabbitAddress="));
-        var rabbitUsernameArg = args.FirstOrDefault(arg => arg.StartsWith("--rabbitUsername="));
-        var rabbitPasswordArg = args.FirstOrDefault(arg => arg.StartsWith("--rabbitPassword="));
-        var rabbitUriArg = args.FirstOrDefault(arg => arg.StartsWith("--rabbitUri="));
-        var rabbitVhostArg = args.FirstOrDefault(arg => arg.StartsWith("--rabbitVhost="));
-        var useRabbit = rabbitAddressArg is not null;
-        var rabbitAddress = (useRabbit) ? Regex.Match(rabbitAddressArg, @"--rabbitAddress=(.*)").Groups[1].Value : null;
-        var rabbitUsername = (useRabbit) ? Regex.Match(rabbitUsernameArg, @"--rabbitUsername=(.*)").Groups[1].Value : null;
-        var rabbitPassword = (useRabbit) ? Regex.Match(rabbitPasswordArg, @"--rabbitPassword=(.*)").Groups[1].Value : null;
-        var rabbitUri = (useRabbit) ? Regex.Match(rabbitUriArg, @"--rabbitPort=(.*)").Groups[1].Value : null;
-        var rabbitVhost = (useRabbit) ? Regex.Match(rabbitVhostArg, @"--rabbitVhost=(.*)").Groups[1].Value : "/"; //default vhost is /
+        var useRabbit = GetUseArgument("--rabbitAddress=");
+        var rabbitAddress = useRabbit ? GetArgumentValue("--rabbitAddress=") : null;
+        var rabbitUsername = useRabbit ? GetArgumentValue("--rabbitUsername=") : null;
+        var rabbitPassword = useRabbit ? GetArgumentValue("--rabbitPassword=") : null;
+        var rabbitUri = useRabbit ? GetArgumentValue("--rabbitUri=") : null;
+        var rabbitVhost = useRabbit ? GetArgumentValue("--rabbitVhost=") ?? "/" : "/";
 
         if (useRabbit && (rabbitAddress is null || rabbitUsername is null || rabbitPassword is null || rabbitUri is null))
         {
@@ -103,7 +110,7 @@ public class ArgumentManager
         return (useRabbit, rabbitAddress, rabbitUsername, rabbitPassword, rabbitUri, rabbitVhost);
     }
 
-    public static void PrintUsageGuideliness()
+    public static void PrintUsageGuidelines()
     {
         Console.WriteLine("**************************");
         Console.WriteLine("Usage:");
