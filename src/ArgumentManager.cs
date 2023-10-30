@@ -123,6 +123,11 @@ public class ArgumentManager
         Console.WriteLine("--useKeyvault");
         Console.WriteLine("--keyvaultUri=<keyvault uri>");
         Console.WriteLine("--keyvaultBusKey=<keyvault bus key>");
+        Console.WriteLine("--rabbitAddress=<rabbit address>");
+        Console.WriteLine("--rabbitUsername=<rabbit username>");
+        Console.WriteLine("--rabbitPassword=<rabbit password>");
+        Console.WriteLine("--rabbitUri=<rabbit uri>");
+        Console.WriteLine("--rabbitVhost=<rabbit vhost>");
         Console.WriteLine("**************************");
  
     }
