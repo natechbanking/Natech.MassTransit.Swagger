@@ -5,6 +5,10 @@ You probably have found yourself writing `MassTransit` consumers and wanting an 
 
 `dotnet tool install -g Natech.MassTransit.Swagger`
 
+> if you are facing issues authenticating with the nuget source then run the following command 
+`iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) }" | dotnet tool install -g Natech.MassTransit.Swagger`
+
+
 ## Supported arguments
 | Argument | Description | Required |
 | --- | --- | --- |
