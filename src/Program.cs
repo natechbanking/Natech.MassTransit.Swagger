@@ -13,131 +13,125 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Natech.MassTransit.Swagger
+namespace Natech.MassTransit.Swagger;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var argumentManager = new ArgumentManager(args);
+        var builder = WebApplication.CreateBuilder(args);
+
+        var dllPath = argumentManager.GetDllPath();
+        var keyvaultArgs = argumentManager.GetKeyvaultArgs();
+        var rabbitArgs = argumentManager.GetRabbitArgs();
+
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+
+        if (keyvaultArgs.useKeyvault && keyvaultArgs.keyvaultUri is not null)
         {
-            var argumentManager = new ArgumentManager(args);
-            var builder = WebApplication.CreateBuilder(args);
-
-            var requiredArgs = argumentManager.GetProjectAndDllPath();
-            var keyvaultArgs = argumentManager.GetKeyvaultArgs();
-            var rabbitArgs = argumentManager.GetRabbitArgs();
-
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            if (keyvaultArgs.useKeyvault && keyvaultArgs.keyvaultUri is not null)
+            var identityOptions = new DefaultAzureCredentialOptions
             {
-                var identityOptions = new DefaultAzureCredentialOptions
-                {
-                    ExcludeVisualStudioCodeCredential = true,
-                    ExcludeSharedTokenCacheCredential = true,
-                    ExcludeVisualStudioCredential = true,
-                    ExcludeInteractiveBrowserCredential = true
-                };
-                builder.Configuration.AddAzureKeyVault(new Uri(keyvaultArgs.keyvaultUri), new DefaultAzureCredential(identityOptions));
-            }
+                ExcludeVisualStudioCodeCredential = true,
+                ExcludeSharedTokenCacheCredential = true,
+                ExcludeVisualStudioCredential = true,
+                ExcludeInteractiveBrowserCredential = true
+            };
+            builder.Configuration.AddAzureKeyVault(new Uri(keyvaultArgs.keyvaultUri), new DefaultAzureCredential(identityOptions));
+        }
 
-            // Scan the referenced assembly for consumer types
-            var ProjectReference = requiredArgs.projectArgValue;
-            var ProjectPath = Path.GetFullPath(ProjectReference);
-            var OutputPath = Path.Combine(ProjectPath, "bin", "Debug", "net6.0");
-            try
+        try
+        {
+            var consumerAssembly = Assembly.LoadFrom(dllPath);
+            var consumerTypes = consumerAssembly.GetTypes()
+            .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
+            .ToList();
+
+            // Create a new controller to list consumer names
+            builder.Services.AddSwaggerGen(c =>
             {
-                var consumerAssemblyPath = Path.Combine(OutputPath, requiredArgs.dllPathValue);
-                var consumerAssembly = Assembly.LoadFrom(consumerAssemblyPath);
-                var consumerTypes = consumerAssembly.GetTypes()
-                .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
-                .ToList();
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer API", Version = "v1" });
+            });
 
-                // Create a new controller to list consumer names
-                builder.Services.AddSwaggerGen(c =>
+            builder.Services.AddSingleton<IEnumerable<Type>>(consumerTypes);
+            builder.Services.AddMassTransit(cfg =>
+            {
+                // Configure MassTransit options
+                cfg.SetKebabCaseEndpointNameFormatter();
+                if (!rabbitArgs.useRabbit)
                 {
-                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Consumer API", Version = "v1" });
-                });
-
-                builder.Services.AddSingleton<IEnumerable<Type>>(consumerTypes);
-                builder.Services.AddMassTransit(cfg =>
-                {
-                    // Configure MassTransit options
-                    cfg.SetKebabCaseEndpointNameFormatter();
-                    if (!rabbitArgs.useRabbit)
+                    cfg.UsingAzureServiceBus((context, config) =>
                     {
-                        cfg.UsingAzureServiceBus((context, config) =>
-                        {
-                            config.Host((keyvaultArgs.useKeyvault) ? builder.Configuration[keyvaultArgs.keyvaultBusKey] : "Test");
-                            config.ConfigureEndpoints(context);
-                        });
-                    }
-                    else
-                    {
-                        cfg.UsingRabbitMq((context, config) =>
-                        {
-                            config.Host(rabbitArgs.rabbitUri, rabbitArgs.rabbitVhost, h =>
-                            {
-                                h.Username(rabbitArgs.rabbitUsername);
-                                h.Password(rabbitArgs.rabbitPassword);
-                            });
-                        });
-                    }
-                });
-
-                var app = builder.Build();
-
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer API v1");
-                    c.RoutePrefix = string.Empty;
-                });
-
-                app.UseRouting();
-
-                // Dynamically generate routes and configure controller actions for each consumer
-                var routePrefix = "/consumers";
-                for (var i = 0; i < consumerTypes.Count; i++)
-                {
-                    var consumerType = consumerTypes[i];
-                    var messageType = consumerType.ClosesType(typeof(IConsumer<>), out Type[] types)
-                    ? types[0]
-                    : throw new InvalidOperationException();
-
-                    var binder = (IBinder)Activator.CreateInstance(typeof(Binder<,>).MakeGenericType(consumerType, messageType))!;
-
-                    binder.Build(app, routePrefix);
+                        config.Host((keyvaultArgs.useKeyvault) ? builder.Configuration[keyvaultArgs.keyvaultBusKey] : "Test");
+                        config.ConfigureEndpoints(context);
+                    });
                 }
-                app.Run();
-            }
-            catch (Exception e)
+                else
+                {
+                    cfg.UsingRabbitMq((context, config) =>
+                    {
+                        config.Host(rabbitArgs.rabbitUri, rabbitArgs.rabbitVhost, h =>
+                        {
+                            h.Username(rabbitArgs.rabbitUsername);
+                            h.Password(rabbitArgs.rabbitPassword);
+                        });
+                    });
+                }
+            });
+
+            var app = builder.Build();
+
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                Console.WriteLine($"Error while trying to load assembly {e.Message}");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Consumer API v1");
+                c.RoutePrefix = string.Empty;
+            });
+
+            app.UseRouting();
+
+            // Dynamically generate routes and configure controller actions for each consumer
+            var routePrefix = "/consumers";
+            for (var i = 0; i < consumerTypes.Count; i++)
+            {
+                var consumerType = consumerTypes[i];
+                var messageType = consumerType.ClosesType(typeof(IConsumer<>), out Type[] types)
+                ? types[0]
+                : throw new InvalidOperationException();
+
+                var binder = (IBinder)Activator.CreateInstance(typeof(Binder<,>).MakeGenericType(consumerType, messageType))!;
+
+                binder.Build(app, routePrefix);
             }
+            app.Run();
         }
-    }
-
-    internal interface IBinder
-    {
-        void Build(IEndpointRouteBuilder app, string route);
-    }
-
-    internal class Binder<TConsumer, TMessage> :
-        IBinder
-        where TConsumer : class, IConsumer
-    {
-        public void Build(IEndpointRouteBuilder app, string routePrefix)
+        catch (Exception e)
         {
-            var consumerName = KebabCaseEndpointNameFormatter.Instance.Consumer<TConsumer>();
-
-            var route = $"{routePrefix}/{consumerName}";
-
-            // Create a POST endpoint for each consumer
-            app.MapPost(route,
-                (IPublishEndpoint publishEndpoint, [FromBody] TMessage message) => publishEndpoint.Publish(message));
+            Console.WriteLine($"Error while trying to load assembly {e.Message}");
         }
+    }
+}
+
+internal interface IBinder
+{
+    void Build(IEndpointRouteBuilder app, string route);
+}
+
+internal class Binder<TConsumer, TMessage> :
+    IBinder
+    where TConsumer : class, IConsumer
+{
+    public void Build(IEndpointRouteBuilder app, string routePrefix)
+    {
+        var consumerName = KebabCaseEndpointNameFormatter.Instance.Consumer<TConsumer>();
+
+        var route = $"{routePrefix}/{consumerName}";
+
+        // Create a POST endpoint for each consumer
+        app.MapPost(route,
+            (IPublishEndpoint publishEndpoint, [FromBody] TMessage message) => publishEndpoint.Publish(message));
     }
 }

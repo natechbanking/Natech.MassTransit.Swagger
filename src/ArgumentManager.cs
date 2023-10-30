@@ -14,7 +14,7 @@ using System.Text.RegularExpressions;
 public class ArgumentManager
 {
     private readonly string[] args;
-    private readonly string[] requiredArgs = { "--project=", "--dllPath=" };
+    private readonly string[] requiredArgs = { "--dllPath=" };
 
     public ArgumentManager(string[] args)
     {
@@ -51,15 +51,13 @@ public class ArgumentManager
         return args.Any(arg => arg.StartsWith(argName));
     }
 
-    public (string projectArgValue, string dllPathValue) GetProjectAndDllPath()
+    public string? GetDllPath()
     {
-        var projectArgValue = GetArgumentValue("--project=");
         var dllPathValue = GetArgumentValue("--dllPath=");
 
-        Console.WriteLine($"Using project: {projectArgValue}");
         Console.WriteLine($"Using dllPath: {dllPathValue}");
 
-        return (projectArgValue, dllPathValue);
+        return dllPathValue;
     }
 
     public (bool useKeyvault, string keyvaultUri, string keyvaultBusKey) GetKeyvaultArgs()
@@ -116,7 +114,6 @@ public class ArgumentManager
         Console.WriteLine("Usage:");
         Console.WriteLine("**************************");
         Console.WriteLine("Required arguments:");
-        Console.WriteLine("--project=<project path>");
         Console.WriteLine("--dllPath=<dll path>");
         Console.WriteLine("**************************");
         Console.WriteLine("Optional arguments:");
