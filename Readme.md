@@ -24,3 +24,12 @@ You probably have found yourself writing `MassTransit` consumers and wanting an 
 
 #### Using with rabbitmq
 `mtswagger --rabbitAddress=localhost --rabbitUri=amqp://localhost --rabbitUsername=guest --rabbitPassword=guest --rabbitVhost=/ --dllPath=C:\git\Service.dll`
+
+## Update
+`dotnet tool update -g Natech.MassTransit.Swagger`
+
+## Uninstall
+`dotnet tool uninstall -g Natech.MassTransit.Swagger`
+
+## Install specific version
+`dotnet tool install -g Natech.MassTransit.Swagger --version 1.0.0`
