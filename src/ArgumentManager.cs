@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Text.RegularExpressions;
-
-namespace Natech.MassTransit.Swagger;
+﻿namespace Natech.MassTransit.Swagger;
 
 /// <summary>
 ///     This class should be cleared up and refactored ideally using a CLI Argument Parser library like CommandLineParser, Spectre.Console or something similar

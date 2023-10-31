@@ -45,7 +45,7 @@ public class Program
 
         try
         {
-            var consumerAssembly = Assembly.LoadFrom(dllPath);
+            var consumerAssembly = Assembly.LoadFrom(dllPath ?? throw (new FileNotFoundException("Could not find the specified DLL path")));
             var consumerTypes = consumerAssembly.GetTypes()
             .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
             .ToList();
