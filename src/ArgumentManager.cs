@@ -14,31 +14,95 @@ using System.Text.RegularExpressions;
 public class ArgumentManager
 {
     private readonly string[] args;
-    private readonly string[] requiredArgs = { "--dllPath=" };
+    private static readonly string DllPathArg = "--dllPath=";
+    private static readonly string KeyvaultUriArg = "--keyvaultUri=";
+    private static readonly string KeyvaultBusKeyArg = "--keyvaultBusKey=";
+    private static readonly string SbConnectionStringArg = "--sbConnectionString=";
+    private static readonly string RabbitMqUsernameArg = "--rabbitMqUsername=";
+    private static readonly string RabbitMqPasswordArg = "--rabbitMqPassword=";
+    private static readonly string RabbitMqUriArg = "--rabbitMqUri=";
+    private static readonly string RabbitMqVhostArg = "--rabbitMqVhost=";
 
+    private const string UsageGuidelines = @"**************************
+Usage:
+**************************
+Required arguments:
+{0} or -p <dll path>
+**************************
+Optional arguments:
+{1} or -k <keyvault uri>
+{2} <keyvault bus key>
+{3} or -c <sb connection string>
+{4} <rabbitMq username>
+{5} <rabbitMq password>
+{6} <rabbitMq uri>
+{7} <rabbitMq vhost>
+**************************";
+
+    /// <summary>
+    /// Initializes a new instance of the ArgumentManager class.
+    /// </summary>
+    /// <param name="args">The command-line arguments.</param>
     public ArgumentManager(string[] args)
     {
         this.args = args;
         ValidateRequiredArgs();
     }
 
+    /// <summary>
+    /// Validates the required arguments.
+    /// </summary>
     public void ValidateRequiredArgs()
     {
-        foreach (var requiredArg in requiredArgs)
+        if (!args.Any(arg => arg.StartsWith(DllPathArg) || arg.StartsWith("-p")))
         {
-            if (!args.Any(arg => arg.StartsWith(requiredArg)))
-            {
-                MissingArgument(requiredArg);
-            }
+            MissingArgument(DllPathArg);
         }
     }
 
-    private string? GetArgumentValue(string argName)
+    public string? GetDllPath()
     {
-        var argument = args.FirstOrDefault(arg => arg.StartsWith(argName));
-        return argument != null ? Regex.Match(argument, $@"{argName}(.*)").Groups[1].Value : null;
+        return GetArgumentValue(DllPathArg) ?? GetArgumentValue("-p");
     }
 
+    public (bool useKeyvault, string keyvaultUri, string keyvaultBusKey) GetKeyvaultArgs()
+    {
+        var useKeyvault = args.Any(arg => arg.StartsWith(KeyvaultUriArg) || arg.StartsWith("-k"));
+        var keyvaultUri = useKeyvault ? GetArgumentValue(KeyvaultUriArg) ?? GetArgumentValue("-k") : null;
+        var keyvaultBusKey = useKeyvault ? GetArgumentValue(KeyvaultBusKeyArg) : null;
+        return (useKeyvault, keyvaultUri, keyvaultBusKey);
+    }
+
+    public string? GetAzureServiceBusConnectionString()
+    {
+        return GetArgumentValue(SbConnectionStringArg) ?? GetArgumentValue("-c");
+    }
+
+    public (bool useRabbitMq, string rabbitMqUsername, string rabbitMqPassword, string rabbitMqUri, string rabbitMqVhost) GetRabbitArgs()
+    {
+        var useRabbitMq = args.Any(arg => arg.StartsWith(RabbitMqUsernameArg) || arg.StartsWith(RabbitMqPasswordArg) || arg.StartsWith(RabbitMqUriArg) || arg.StartsWith("-r"));
+        var rabbitMqUsername = GetArgumentValue(RabbitMqUsernameArg);
+        var rabbitMqPassword = GetArgumentValue(RabbitMqPasswordArg);
+        var rabbitMqUri = GetArgumentValue(RabbitMqUriArg) ?? GetArgumentValue("-r");
+        var rabbitMqVhost = GetArgumentValue(RabbitMqVhostArg) ?? "/";
+        return (useRabbitMq, rabbitMqUsername, rabbitMqPassword, rabbitMqUri, rabbitMqVhost);
+    }
+
+    /// <summary>
+    /// Gets the value of a command-line argument.
+    /// </summary>
+    /// <param name="argName">The name of the argument to retrieve.</param>
+    /// <returns>The value of the argument or null if not found.</returns>
+    private string? GetArgumentValue(string argName)
+    {
+        var argument = args.FirstOrDefault(arg => arg.StartsWith(argName) || (arg.StartsWith("-" + argName[2]) && arg[3] == ' '));
+        return argument != null ? Regex.Match(argument, $@"{argName}(?:=|\s+)(.*)").Groups[1].Value : null;
+    }
+
+    /// <summary>
+    /// Handles missing arguments by displaying an error message and exiting the application.
+    /// </summary>
+    /// <param name="argName">The name of the missing argument.</param>
     private static void MissingArgument(string argName)
     {
         Console.WriteLine($"Missing {argName} argument");
@@ -46,91 +110,13 @@ public class ArgumentManager
         Environment.Exit(0);
     }
 
-    private bool GetUseArgument(string argName)
-    {
-        return args.Any(arg => arg.StartsWith(argName));
-    }
+    // ... other methods ...
 
-    public string? GetDllPath()
-    {
-        var dllPathValue = GetArgumentValue("--dllPath=");
-
-        Console.WriteLine($"Using dllPath: {dllPathValue}");
-
-        return dllPathValue;
-    }
-
-    public (bool useKeyvault, string keyvaultUri, string keyvaultBusKey) GetKeyvaultArgs()
-    {
-        var useKeyvault = GetUseArgument("--keyvaultUri=") && GetUseArgument("--keyvaultBusKey=");
-        var keyvaultUri = useKeyvault ? GetArgumentValue("--keyvaultUri=") : null;
-        var keyVaultBusKey = useKeyvault ? GetArgumentValue("--keyvaultBusKey=") : null;
-
-        Console.WriteLine($"Using keyvault: {useKeyvault}");
-
-        if (useKeyvault && (keyvaultUri is null || keyVaultBusKey is null))
-        {
-            useKeyvault = false;
-        }
-
-        if (useKeyvault)
-        {
-            Console.WriteLine($"Using keyvaultUri: {keyvaultUri}");
-            Console.WriteLine($"Using keyvaultBusKey: {keyVaultBusKey}");
-        }
-
-        return (useKeyvault, keyvaultUri, keyVaultBusKey);
-    }
-
-    //get azure service bus connection string
-    public string? GetAzureServiceBusConnectionString()
-    {
-        var keyvaultUri = GetArgumentValue("--sbConnectionString=");
-        return keyvaultUri;
-    }
-
-    public (bool useRabbit, string rabbitAddress, string rabbitUsername, string rabbitPassword, string rabbitUri, string rabbitVhost) GetRabbitArgs()
-    {
-        var useRabbit = GetUseArgument("--rabbitAddress=");
-        var rabbitAddress = useRabbit ? GetArgumentValue("--rabbitAddress=") : null;
-        var rabbitUsername = useRabbit ? GetArgumentValue("--rabbitUsername=") : null;
-        var rabbitPassword = useRabbit ? GetArgumentValue("--rabbitPassword=") : null;
-        var rabbitUri = useRabbit ? GetArgumentValue("--rabbitUri=") : null;
-        var rabbitVhost = useRabbit ? GetArgumentValue("--rabbitVhost=") ?? "/" : "/";
-
-        if (useRabbit && (rabbitAddress is null || rabbitUsername is null || rabbitPassword is null || rabbitUri is null))
-        {
-            useRabbit = false;
-        }
-
-        if (useRabbit)
-        {
-            Console.WriteLine($"Using rabbitAddress: {rabbitAddress}");
-            Console.WriteLine($"Using rabbitUsername: {rabbitUsername}");
-            Console.WriteLine($"Using rabbitPassword: {rabbitPassword}");
-            Console.WriteLine($"Using rabbitUri: {rabbitUri}");
-            Console.WriteLine($"Using rabbitVhost: {rabbitVhost}");
-        }
-
-        return (useRabbit, rabbitAddress, rabbitUsername, rabbitPassword, rabbitUri, rabbitVhost);
-    }
-
+    /// <summary>
+    /// Displays usage guidelines for the command-line arguments.
+    /// </summary>
     public static void PrintUsageGuidelines()
     {
-        Console.WriteLine("**************************");
-        Console.WriteLine("Usage:");
-        Console.WriteLine("**************************");
-        Console.WriteLine("Required arguments:");
-        Console.WriteLine("--dllPath=<dll path>");
-        Console.WriteLine("**************************");
-        Console.WriteLine("Optional arguments:");
-        Console.WriteLine("--keyvaultUri=<keyvault uri>");
-        Console.WriteLine("--keyvaultBusKey=<keyvault bus key>");
-        Console.WriteLine("--rabbitAddress=<rabbit address>");
-        Console.WriteLine("--rabbitUsername=<rabbit username>");
-        Console.WriteLine("--rabbitPassword=<rabbit password>");
-        Console.WriteLine("--rabbitUri=<rabbit uri>");
-        Console.WriteLine("--rabbitVhost=<rabbit vhost>");
-        Console.WriteLine("**************************");
+        Console.WriteLine(string.Format(UsageGuidelines, DllPathArg, KeyvaultUriArg, KeyvaultBusKeyArg, SbConnectionStringArg, RabbitMqUsernameArg, RabbitMqPasswordArg, RabbitMqUriArg, RabbitMqVhostArg));
     }
 }

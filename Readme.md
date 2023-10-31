@@ -1,43 +1,74 @@
 ## What is this?
-You probably have found yourself writing `MassTransit` consumers and wanting an easy way to actually test them! While the best way to do this is through thorough unit testing , we've actually developed a small tool to expose all of your consumers in a swagger UI for easy testing!
 
-## Installation 
+You've probably found yourself writing `MassTransit` consumers and wanting an easy way to test them. While the best practice is thorough unit testing, we've developed a small tool to expose all your consumers in a Swagger UI for easy testing!
 
-`dotnet tool install -g Natech.MassTransit.Swagger`
+## Installation
 
-> if you are facing issues authenticating with the nuget source then run the following command 
-`iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) }" | dotnet tool install -g Natech.MassTransit.Swagger`
+To install, run:
 
+```shell
+dotnet tool install -g Natech.MassTransit.Swagger
+```
+
+If you face issues authenticating with the NuGet source, you can try the following command:
+
+```shell
+iex "& { $(irm https://aka.ms/install-artifacts-credprovider.ps1) }" | dotnet tool install -g Natech.MassTransit.Swagger
+```
 
 ## Supported arguments
-| Argument | Description | Required |
-| --- | --- | --- |
-| --dllPath | The path to the dll containing your consumers | Yes ✅|
-| --sbConnectionString | The connection string to your azure service bus | No ❌ |
-| --keyvaultUri | The uri of the keyvault containing your secrets | No ❌ |
-| --keyvaultBusKey | The name of the secret containing the bus connection string | No ❌ |
-| --rabbitAddress | The address of the rabbitmq server | No ❌ |
-| --rabbitUsername | The username of the rabbitmq server | No ❌ |
-| --rabbitPassword | The password of the rabbitmq server | No ❌ |
-| --rabbitUri | The uri of the rabbitmq server | No ❌ |
-| --rabbitVhost | The vhost of the rabbitmq server | No ❌ |
+
+| Argument                  | Description                                                 | Required |
+| ------------------------- | ----------------------------------------------------------- | -------- |
+| --dllPath (-p)            | The path to the DLL containing your consumers               | Yes ✅   |
+| --sbConnectionString (-c) | The connection string to your Azure Service Bus             | No ❌    |
+| --keyvaultUri (-k)        | The URI of the KeyVault containing your secrets             | No ❌    |
+| --keyvaultBusKey          | The name of the secret containing the bus connection string | No ❌    |
+| --rabbitUsername          | The username of the RabbitMQ server                         | No ❌    |
+| --rabbitPassword          | The password of the RabbitMQ server                         | No ❌    |
+| --rabbitUri (-r)          | The URI of the RabbitMQ server                              | No ❌    |
+| --rabbitVhost             | The vhost of the RabbitMQ server                            | No ❌    |
 
 ## Examples
 
-#### Using with azure service bus and keyvault
-`mtswagger --keyvaultUri=https://kv-test.vault.azure.net/ --keyvaultBusKey=BusConnStr --dllPath=C:\git\Service.dll`
+#### Using with Azure Service Bus and KeyVault
 
-#### Using with rabbitmq
-`mtswagger --rabbitAddress=localhost --rabbitUri=amqp://localhost --rabbitUsername=guest --rabbitPassword=guest --rabbitVhost=/ --dllPath=C:\git\Service.dll`
+```shell
+mtswagger --keyvaultUri=https://kv-test.vault.azure.net/ --keyvaultBusKey=BusConnStr --dllPath=C:\git\Service.dll
+```
 
-#### Using with no keyvault and service bus
-`mtswagger --sbConnectionString=Endpoint=sb://test.servicebus.windows.net --dllPath=C:\git\Service.dll`
+#### Using with RabbitMQ
+
+```shell
+mtswagger --rabbitUri=amqp://localhost --rabbitUsername=guest --rabbitPassword=guest --rabbitVhost=/ --dllPath=C:\git\Service.dll
+```
+
+#### Using with no KeyVault and Azure Service Bus
+
+```shell
+mtswagger --sbConnectionString=Endpoint=sb://test.servicebus.windows.net --dllPath=C:\git\Service.dll
+```
 
 ## Update
-`dotnet tool update -g Natech.MassTransit.Swagger`
+
+To update the tool, run:
+
+```shell
+dotnet tool update -g Natech.MassTransit.Swagger
+```
 
 ## Uninstall
-`dotnet tool uninstall -g Natech.MassTransit.Swagger`
 
-## Install specific version
-`dotnet tool install -g Natech.MassTransit.Swagger --version 1.0.0`
+To uninstall, run:
+
+```shell
+dotnet tool uninstall -g Natech.MassTransit.Swagger
+```
+
+## Install a Specific Version
+
+To install a specific version, use the `--version` flag:
+
+```shell
+dotnet tool install -g Natech.MassTransit.Swagger --version 1.0.0
+```

@@ -61,7 +61,7 @@ public class Program
             {
                 // Configure MassTransit options
                 cfg.SetKebabCaseEndpointNameFormatter();
-                if (!rabbitArgs.useRabbit)
+                if (!rabbitArgs.useRabbitMq)
                 {
                     cfg.UsingAzureServiceBus((context, config) =>
                     {
@@ -73,10 +73,10 @@ public class Program
                 {
                     cfg.UsingRabbitMq((context, config) =>
                     {
-                        config.Host(rabbitArgs.rabbitUri, rabbitArgs.rabbitVhost, h =>
+                        config.Host(rabbitArgs.rabbitMqUri, rabbitArgs.rabbitMqVhost, h =>
                         {
-                            h.Username(rabbitArgs.rabbitUsername);
-                            h.Password(rabbitArgs.rabbitPassword);
+                            h.Username(rabbitArgs.rabbitMqUsername);
+                            h.Password(rabbitArgs.rabbitMqPassword);
                         });
                     });
                 }
