@@ -7,3 +7,6 @@
 /tests/bin/Debug/net6.0
 /tests/obj
 /src/bin/Debug
+/.vs
+/src
+/TestResults
