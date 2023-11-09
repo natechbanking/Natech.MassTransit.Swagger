@@ -1,9 +1,9 @@
+namespace Natech.MassTransit.Swagger;
+
 using Azure.Identity;
-using MassTransit;
-using MassTransit.Internals;
+using global::MassTransit;
+using global::MassTransit.Internals;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
@@ -12,8 +12,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
-namespace Natech.MassTransit.Swagger;
 
 public class Program
 {
@@ -45,7 +43,7 @@ public class Program
 
         try
         {
-            var consumerAssembly = Assembly.LoadFrom(dllPath ?? throw (new FileNotFoundException("Could not find the specified DLL path")));
+            var consumerAssembly = Assembly.LoadFrom(dllPath ?? throw (new FileNotFoundException(Constants.FileNotFound)));
             var consumerTypes = consumerAssembly.GetTypes()
             .Where(type => type.IsClass && !type.IsAbstract && typeof(IConsumer).IsAssignableFrom(type))
             .ToList();
@@ -95,7 +93,7 @@ public class Program
             app.UseRouting();
 
             // Dynamically generate routes and configure controller actions for each consumer
-            var routePrefix = "/consumers";
+            var routePrefix = Constants.Consumers;
             for (var i = 0; i < consumerTypes.Count; i++)
             {
                 var consumerType = consumerTypes[i];
@@ -113,26 +111,5 @@ public class Program
         {
             Console.WriteLine($"Error while trying to load assembly {e.Message}");
         }
-    }
-}
-
-internal interface IBinder
-{
-    void Build(IEndpointRouteBuilder app, string route);
-}
-
-internal class Binder<TConsumer, TMessage> :
-    IBinder
-    where TConsumer : class, IConsumer
-{
-    public void Build(IEndpointRouteBuilder app, string routePrefix)
-    {
-        var consumerName = KebabCaseEndpointNameFormatter.Instance.Consumer<TConsumer>();
-
-        var route = $"{routePrefix}/{consumerName}";
-
-        // Create a POST endpoint for each consumer
-        app.MapPost(route,
-            (IPublishEndpoint publishEndpoint, [FromBody] TMessage message) => publishEndpoint.Publish(message));
     }
 }

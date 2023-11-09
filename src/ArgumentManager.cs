@@ -103,7 +103,6 @@ Optional arguments:
     {
         Console.WriteLine($"Missing {argName} argument");
         PrintUsageGuidelines();
-        Environment.Exit(0);
     }
 
     // ... other methods ...
