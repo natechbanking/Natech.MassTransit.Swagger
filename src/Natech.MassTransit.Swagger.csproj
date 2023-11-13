@@ -4,7 +4,7 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<OutputType>Exe</OutputType>
-		<Version>1.0.33</Version>
+		<Version>1.0.34</Version>
 		<Nullable>enable</Nullable>
 		<Authors>Natech S.A.</Authors>
 		<Copyright>Natech S.A.</Copyright>
@@ -17,6 +17,8 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>mtswagger</ToolCommandName>
 		<GenerateRuntimeConfigDevFile>true</GenerateRuntimeConfigDevFile>
+		<RepositoryUrl>https://github.com/natechsa/Natech.MassTransit.Swagger</RepositoryUrl> 
+		<RepositoryType>git</RepositoryType> 
 	</PropertyGroup>
 
 	<ItemGroup Label="MassTransit">

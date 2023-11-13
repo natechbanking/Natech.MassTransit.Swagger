@@ -1,3 +1,6 @@
+![Nuget](https://img.shields.io/nuget/dt/Natech.MassTransit.Swagger)
+
+
 ## What is this?
 
 You've probably found yourself writing `MassTransit` consumers and wanting an easy way to test them. While the best practice is thorough unit testing, we've developed a small tool to expose all your consumers in a Swagger UI for easy testing!
